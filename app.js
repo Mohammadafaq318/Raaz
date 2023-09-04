@@ -1,3 +1,4 @@
+require('dotenv').config()
 const express= require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
@@ -19,8 +20,7 @@ const UserSchema= new mongoose.Schema({
     password: String
 });
 
-const secret = "This is our secret";
-UserSchema.plugin(encrypt,{secret:secret, encryptedFields:["password"]});
+UserSchema.plugin(encrypt,{secret:process.env.SECRET, encryptedFields:["password"]});
 
 const User = mongoose.model('User', UserSchema);
 
@@ -47,7 +47,7 @@ app.post("/register",async function (req,res){
     try {
         await newUser.save();
         console.log("New User added");
-        res.render("secrets")
+        res.render("secrets") 
         } 
     catch (err) {
         console.log(err);
