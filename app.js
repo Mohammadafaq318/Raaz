@@ -3,9 +3,12 @@ const express= require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-var encrypt = require('mongoose-encryption');
+var md5 = require('md5');
+const bcrypt = require('bcrypt');
 
 const app = express();
+const saltRounds=10;
+
 
 app.use(express.static("public"));
 app.set('view engine', 'ejs');
@@ -20,7 +23,6 @@ const UserSchema= new mongoose.Schema({
     password: String
 });
 
-UserSchema.plugin(encrypt,{secret:process.env.SECRET, encryptedFields:["password"]});
 
 const User = mongoose.model('User', UserSchema);
 
@@ -37,39 +39,50 @@ app.get("/register",function(req,res){
     res.render("register");
 })
 
-app.post("/register",async function (req,res){
-    const newUser= new User ({
-        email: req.body.username,
-        password: req.body.password
-    });
+app.post("/register", function (req,res){
 
-   
-    try {
-        await newUser.save();
-        console.log("New User added");
-        res.render("secrets") 
-        } 
-    catch (err) {
-        console.log(err);
-        }
+    bcrypt.hash(req.body.password, saltRounds, async function(err, hash) {
+        const newUser= new User ({
+            email: req.body.username,
+            password: hash
+        });
+
+        try {
+            await newUser.save();
+            console.log("New User added");
+            res.render("secrets") 
+            } 
+        catch (err) {
+            console.log(err);
+            }
+    });
+    
+    
     
 });
 
 app.post("/login",async function (req,res){
+
+
+    
     const username=req.body.username;
     const password=req.body.password;
 
    
-try {
+    try {
         const FoundUser= await User.findOne({email: username});
 
         if(FoundUser){
-            if(FoundUser.password===password){
-                res.render("secrets");
-            }
-            else{
-                res.render("login");
-            }
+            bcrypt.compare(password, FoundUser.password, function(err, result) {
+
+                if(result === true){
+                    res.render("secrets");
+                }
+                else{
+                    res.render("login");
+                }
+                
+            });
         }
         else{
             res.render("login");
