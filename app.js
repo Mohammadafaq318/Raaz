@@ -84,27 +84,23 @@ app.get("/register",function(req,res){
     res.render("register");
 })
 
-app.get("/submit",function(req,res){
-    if ( req.isAuthenticated()){
-        res.redirect("secrets");
+app.get("/secrets", async function(req, res){
+    try{
+        const foundUsers = await User.find({ "secret": { $ne: null } }).exec();
+        if (foundUsers) {
+            res.render("secrets", {usersWithSecrets: foundUsers});
+          }
+    }catch(error){
+        console.log(error);
     }
-    else{
-        res.redirect("/login");
-    }
-});
-
-0
-
-app.get("/secrets", function (req, res){
-    User.find({"secret": { $ne: null }})
-    .then(function(foundUsers) {
-      console.log(foundUsers);
-      res.render("secrets", { usersWithSecrets: foundUsers });
-    })
-    .catch(function(err) {
-      console.log(err);
-    });
- 
+  });
+  
+app.get("/submit", function(req, res){
+if (req.isAuthenticated()){
+    res.render("submit");
+} else {
+    res.redirect("/login");
+}
 });
 
 app.post("/register", function (req,res){
