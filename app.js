@@ -31,6 +31,7 @@ const UserSchema= new mongoose.Schema({
     email: String,
     password: String,
     googleId: String,
+    secret: String
 });
 
 UserSchema.plugin(passportLocalMongoose);
@@ -83,14 +84,28 @@ app.get("/register",function(req,res){
     res.render("register");
 })
 
-app.get("/secrets", function(req,res){
+app.get("/submit",function(req,res){
     if ( req.isAuthenticated()){
-        res.render("secrets");
+        res.redirect("secrets");
     }
     else{
         res.redirect("/login");
     }
-})
+});
+
+0
+
+app.get("/secrets", function (req, res){
+    User.find({"secret": { $ne: null }})
+    .then(function(foundUsers) {
+      console.log(foundUsers);
+      res.render("secrets", { usersWithSecrets: foundUsers });
+    })
+    .catch(function(err) {
+      console.log(err);
+    });
+ 
+});
 
 app.post("/register", function (req,res){
 
@@ -132,6 +147,29 @@ app.get("/logout",function(req,res){
         res.redirect('/');
       });
 })
+
+app.post("/submit", async function (req, res) {
+    const submittedSecret = req.body.secret;
+
+    try {
+        console.log(req.user);
+        const foundUser = await User.findById(req.user._id);
+        
+        if (!foundUser) {
+            console.log("User not found");
+            return; // or handle the error appropriately
+        }
+    
+        foundUser.secret = submittedSecret;
+        await foundUser.save();
+    
+        res.redirect("/secrets");
+    } catch (err) {
+        console.error(err);
+        // Handle the error in an appropriate way, such as sending an error response to the client.
+    }
+  });
+  
 
 const PORT=3000;
 app.listen(PORT, function() {
